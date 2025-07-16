@@ -3,12 +3,16 @@ using TMPro;
 
 public class KeypadLock5 : MonoBehaviour
 {
-    [Header("Referencias Keypad 5")]
-    public TextMeshPro passCodeDisplay; // TextMeshPro estándar
-    public GameObject[] keyButtons; // Array de botones específicos
+    [Header("Keypad 5 Config")]
+    public TextMeshPro passCodeDisplay;
+    public GameObject[] keyButtons;
 
     private string currentCode = "";
     private string savedCode = "?";
+
+    // Sistema de eventos común (igual que en KeypadLock1-4)
+    public static System.Action<char, int> OnKeypadValueChanged;
+    public char associatedLetter = 'E'; // Asignar 'E' en el Inspector
 
     void Start()
     {
@@ -33,7 +37,7 @@ public class KeypadLock5 : MonoBehaviour
 
     public void AddDigit(string digit)
     {
-        if (currentCode.Length < 10) // Límite de 10 dígitos
+        if (currentCode.Length < 10)
             currentCode += digit;
 
         passCodeDisplay.text = currentCode;
@@ -47,9 +51,19 @@ public class KeypadLock5 : MonoBehaviour
 
     public void SaveCode()
     {
-        savedCode = currentCode;
-        if (string.IsNullOrEmpty(savedCode)) savedCode = "?";
+        savedCode = string.IsNullOrEmpty(currentCode) ? "?" : currentCode;
         SetKeypadVisible(false);
-        Debug.Log("Keypad5 - Código guardado: " + savedCode);
+
+        // Conversión segura y notificación
+        int value = 0;
+        if (savedCode != "?" && !int.TryParse(savedCode, out value))
+        {
+            savedCode = "?"; // Reset si no es numérico
+        }
+
+        OnKeypadValueChanged?.Invoke(associatedLetter, value);
+        Debug.Log($"[Keypad5] {associatedLetter}={value}");
     }
+
+    public string GetSavedCode() => savedCode;
 }

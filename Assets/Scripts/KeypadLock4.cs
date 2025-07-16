@@ -3,11 +3,16 @@ using TMPro;
 
 public class KeypadLock4 : MonoBehaviour
 {
+    [Header("Keypad 4 Config")]
     public TextMeshPro passCodeDisplay;
     public GameObject[] keyButtons;
 
     private string currentCode = "";
     private string savedCode = "?";
+
+    // Sistema de eventos común para todos los keypads
+    public static System.Action<char, int> OnKeypadValueChanged;
+    public char associatedLetter = 'D'; // Asignar 'D' en el Inspector
 
     void Start()
     {
@@ -46,8 +51,19 @@ public class KeypadLock4 : MonoBehaviour
 
     public void SaveCode()
     {
-        savedCode = currentCode;
-        if (string.IsNullOrEmpty(savedCode)) savedCode = "?";
+        savedCode = string.IsNullOrEmpty(currentCode) ? "?" : currentCode;
         SetKeypadVisible(false);
+
+        // Conversión segura y notificación
+        int value = 0;
+        if (savedCode != "?" && !int.TryParse(savedCode, out value))
+        {
+            savedCode = "?"; // Reset si no es numérico
+        }
+
+        OnKeypadValueChanged?.Invoke(associatedLetter, value);
+        Debug.Log($"[Keypad4] {associatedLetter}={value}");
     }
+
+    public string GetSavedCode() => savedCode;
 }

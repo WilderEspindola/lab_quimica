@@ -1195,6 +1195,7 @@ MonoBehaviour:
   - {fileID: 147885021}
   - {fileID: 147885020}
   - {fileID: 147885019}
+  associatedLetter: 66
 --- !u!114 &147885034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2368,6 +2369,7 @@ MonoBehaviour:
   - {fileID: 329312935}
   - {fileID: 329312934}
   - {fileID: 329312933}
+  associatedLetter: 69
 --- !u!114 &329312948
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2446,12 +2448,6 @@ MonoBehaviour:
   D: 0
   E: 0
   F: 0
-  SocketValue1: 0
-  SocketValue2: 0
-  SocketValue3: 0
-  SocketValue4: 0
-  SocketValue5: 0
-  SocketValue6: 0
   Sockets:
   - {fileID: 1796789120}
   - {fileID: 708551020}
@@ -3853,6 +3849,7 @@ MonoBehaviour:
   - {fileID: 596309737}
   - {fileID: 596309736}
   - {fileID: 596309735}
+  associatedLetter: 68
 --- !u!114 &596309750
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10668,6 +10665,7 @@ MonoBehaviour:
   - {fileID: 1823645306}
   - {fileID: 1823645305}
   - {fileID: 1823645304}
+  associatedLetter: 67
 --- !u!114 &1823645319
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11667,6 +11665,7 @@ MonoBehaviour:
   - {fileID: 2033432232}
   - {fileID: 2033432231}
   - {fileID: 2033432230}
+  associatedLetter: 70
 --- !u!114 &2033432245
 MonoBehaviour:
   m_ObjectHideFlags: 0

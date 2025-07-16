@@ -5,10 +5,14 @@ public class KeypadLock2 : MonoBehaviour
 {
     [Header("Referencias - Keypad 2")]
     public TextMeshPro passCodeDisplay;
-    public GameObject[] keyButtons; // Botones de ESTE keypad
+    public GameObject[] keyButtons;
 
     private string currentCode = "";
     private string savedCode = "?";
+
+    // Evento estático para notificar cambios
+    public static System.Action<char, int> OnKeypadValueChanged;
+    public char associatedLetter = 'B'; // Asignar en Inspector (B para KeypadLock2)
 
     void Start()
     {
@@ -47,10 +51,14 @@ public class KeypadLock2 : MonoBehaviour
 
     public void SaveCode()
     {
-        savedCode = currentCode;
-        if (string.IsNullOrEmpty(savedCode)) savedCode = "?";
+        savedCode = string.IsNullOrEmpty(currentCode) ? "?" : currentCode;
         SetKeypadVisible(false);
-        Debug.Log("Keypad2 guardó: " + savedCode); // Identificador único
+
+        // Notificar al FlowManager (Nuevo)
+        int value = savedCode == "?" ? 0 : int.Parse(savedCode);
+        OnKeypadValueChanged?.Invoke(associatedLetter, value);
+
+        Debug.Log($"Keypad2 ({associatedLetter}) guardó: {savedCode}");
     }
 
     public string GetSavedCode() => savedCode;

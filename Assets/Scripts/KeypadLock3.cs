@@ -5,10 +5,14 @@ public class KeypadLock3 : MonoBehaviour
 {
     [Header("Configuración Keypad 3")]
     public TextMeshPro passCodeDisplay;
-    public GameObject[] keyButtons; // Botones específicos de ESTE keypad
+    public GameObject[] keyButtons;
 
     private string currentCode = "";
     private string savedCode = "?";
+
+    // Evento estático para notificar cambios
+    public static System.Action<char, int> OnKeypadValueChanged;
+    public char associatedLetter = 'C'; // Asignar en Inspector (C para KeypadLock3)
 
     void Start()
     {
@@ -16,7 +20,6 @@ public class KeypadLock3 : MonoBehaviour
         SetKeypadVisible(false);
     }
 
-    // Métodos con sufijo "3" para evitar conflicto
     public void ToggleKeypad3()
     {
         bool newState = !keyButtons[0].activeSelf;
@@ -48,9 +51,19 @@ public class KeypadLock3 : MonoBehaviour
 
     public void SaveCode()
     {
-        savedCode = currentCode;
-        if (string.IsNullOrEmpty(savedCode)) savedCode = "?";
+        savedCode = string.IsNullOrEmpty(currentCode) ? "?" : currentCode;
         SetKeypadVisible(false);
-        Debug.Log("[Keypad3] Código guardado: " + savedCode);
+
+        // Notificar al FlowManager (Nuevo)
+        if (!int.TryParse(savedCode, out int value))
+        {
+            value = savedCode == "?" ? 0 : 0; // Fuerza 0 si no es número
+            savedCode = "?"; // Opcional: Resetear si es inválido
+        }
+        OnKeypadValueChanged?.Invoke(associatedLetter, value);
+
+        Debug.Log($"[Keypad3] {associatedLetter}={savedCode}");
     }
+
+    public string GetSavedCode() => savedCode;
 }

@@ -5,23 +5,25 @@ public class KeypadLock : MonoBehaviour
 {
     [Header("Referencias")]
     public TextMeshPro passCodeDisplay;
-    public GameObject[] keyButtons; // Todos los objetos Key_*
+    public GameObject[] keyButtons;
 
     private string currentCode = "";
-    private string savedCode = "?"; // Inicializado con "?"
+    private string savedCode = "?";
+
+    // Evento estático para notificar cambios (Añadir esto)
+    public static System.Action<char, int> OnKeypadValueChanged;
+    public char associatedLetter = 'A'; // Asignar en Inspector (A para KeypadLock1)
 
     void Start()
     {
-        passCodeDisplay.text = savedCode; // Mostrar "?" al inicio
-        SetKeypadVisible(false); // Ocultar botones al iniciar
+        passCodeDisplay.text = savedCode;
+        SetKeypadVisible(false);
     }
 
     public void ToggleKeypad()
     {
         bool newState = !keyButtons[0].activeSelf;
         SetKeypadVisible(newState);
-
-        // Al mostrar, limpiamos el código actual (excepto si ya estaba visible)
         if (newState) currentCode = "";
     }
 
@@ -35,7 +37,7 @@ public class KeypadLock : MonoBehaviour
 
     public void AddDigit(string digit)
     {
-        if (currentCode.Length < 10) // Limitar a 10 dígitos
+        if (currentCode.Length < 10)
             currentCode += digit;
 
         passCodeDisplay.text = currentCode;
@@ -49,9 +51,12 @@ public class KeypadLock : MonoBehaviour
 
     public void SaveCode()
     {
-        savedCode = currentCode;
-        if (string.IsNullOrEmpty(savedCode)) savedCode = "?"; // Volver a "?" si está vacío
-        SetKeypadVisible(false); // Ocultar botones
+        savedCode = string.IsNullOrEmpty(currentCode) ? "?" : currentCode;
+        SetKeypadVisible(false);
+
+        // Notificar al FlowManager (Nuevo)
+        int value = savedCode == "?" ? 0 : int.Parse(savedCode);
+        OnKeypadValueChanged?.Invoke(associatedLetter, value);
     }
 
     public string GetSavedCode() => savedCode;

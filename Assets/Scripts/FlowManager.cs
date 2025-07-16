@@ -3,40 +3,55 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 public class FlowManager : MonoBehaviour
 {
-    // Valores base de los cubos (generados aleatoriamente)
+    // Valores aleatorios de las letras (A-F)
     public int A, B, C, D, E, F;
 
-    // Referencias a los Keypads (añadido)
-    [Header("Referencias a Keypads")]
-    public KeypadLock keypadLock1;
-    public KeypadLock2 keypadLock2;
-    public KeypadLock3 keypadLock3;
-    public KeypadLock4 keypadLock4;
-    public KeypadLock5 keypadLock5;
-    public KeypadLock6 keypadLock6;
+    // Diccionario para almacenar valores de keypads (?A-?F)
+    private Dictionary<char, int> keypadValues = new Dictionary<char, int>();
 
-    // Valores efectivos (base + keypad)
-    private int _effectiveA, _effectiveB, _effectiveC, _effectiveD, _effectiveE, _effectiveF;
-
-    // Variables existentes (sin cambios)
-    public int SocketValue1 = 0;
-    public int SocketValue2 = 0;
-    public int SocketValue3 = 0;
-    public int SocketValue4 = 0;
-    public int SocketValue5 = 0;
-    public int SocketValue6 = 0;
+    // Referencias existentes (no tocar)
     public List<GameObject> Sockets = new List<GameObject>();
     public GameObject HandAnimation;
     public bool IsPracticeMode = false;
 
     void Start()
     {
+        InitializeKeypadValues();
         InitializeGame();
+        SubscribeToKeypadEvents();
+    }
+
+    private void InitializeKeypadValues()
+    {
+        keypadValues.Add('A', 0); // ?A inicia en 0
+        keypadValues.Add('B', 0); // ?B inicia en 0
+        keypadValues.Add('C', 0);
+        keypadValues.Add('D', 0);
+        keypadValues.Add('E', 0);
+        keypadValues.Add('F', 0);
+    }
+
+    private void SubscribeToKeypadEvents()
+    {
+        KeypadLock.OnKeypadValueChanged += UpdateKeypadValue;  // Para 'A'
+        KeypadLock2.OnKeypadValueChanged += UpdateKeypadValue; // Para 'B'
+        KeypadLock3.OnKeypadValueChanged += UpdateKeypadValue; // Para 'C'
+        KeypadLock4.OnKeypadValueChanged += UpdateKeypadValue; // Para 'D'
+        KeypadLock5.OnKeypadValueChanged += UpdateKeypadValue; // Para 'E'
+        KeypadLock6.OnKeypadValueChanged += UpdateKeypadValue; // Para 'F'
+    }
+
+    private void UpdateKeypadValue(char letter, int value)
+    {
+        if (keypadValues.ContainsKey(letter))
+        {
+            keypadValues[letter] = value;
+            Debug.Log($"[Keypad] {letter} = {value}");
+        }
     }
 
     private void InitializeGame()
@@ -55,7 +70,7 @@ public class FlowManager : MonoBehaviour
     public void RightHandThumpsUpPerformed()
     {
         IsPracticeMode = true;
-        GameManager.Instance.UI_Messages.text = "Modo Práctica: Coloca los cubos para practicar. Usa ✋ Thumbs Up izquierdo para salir.";
+        GameManager.Instance.UI_Messages.text = "Modo Práctica: Usa los keypads para ajustar valores. ✋ Thumbs Up izquierdo para salir.";
         GameManager.Instance.RightThumbsUp.gameObject.SetActive(false);
         GameManager.Instance.RightShaka.gameObject.SetActive(false);
         GameManager.Instance.LeftThumbsUp.gameObject.SetActive(true);
@@ -67,25 +82,13 @@ public class FlowManager : MonoBehaviour
     public void RightShakaPerformed()
     {
         IsPracticeMode = false;
-        GameManager.Instance.UI_Messages.text = "¡Comienza el juego! Coloca los cubos para igualar ambos lados.";
+        GameManager.Instance.UI_Messages.text = "¡Comienza el juego! Ajusta los keypads para igualar ambos lados.";
         GameManager.Instance.RightThumbsUp.gameObject.SetActive(false);
         GameManager.Instance.RightShaka.gameObject.SetActive(false);
         GameManager.Instance.MathematicsValues.gameObject.SetActive(true);
         EnableSockets();
         GenerateValuesABCDEF();
         StartCountdown();
-    }
-
-    public void LeftHandThumpsUpPerformed()
-    {
-        if (IsPracticeMode)
-        {
-            InitializeGame();
-        }
-        else
-        {
-            RestartScene();
-        }
     }
 
     public void StartCountdown()
@@ -114,24 +117,10 @@ public class FlowManager : MonoBehaviour
 
     public void CalculateValue()
     {
-        SocketValue1 = 0;
-        SocketValue2 = 0;
-        SocketValue3 = 0;
-        SocketValue4 = 0;
-        SocketValue5 = 0;
-        SocketValue6 = 0;
+        int leftSum = (keypadValues['A'] + A) + (keypadValues['B'] + B) + (keypadValues['C'] + C);
+        int rightSum = (keypadValues['D'] + D) + (keypadValues['E'] + E) + (keypadValues['F'] + F);
 
-        for (int i = 0; i < Sockets.Count; i++)
-        {
-            UpdateSocketValue(i);
-        }
-
-        int leftSum = SocketValue1 + SocketValue2 + SocketValue3;
-        int rightSum = SocketValue4 + SocketValue5 + SocketValue6;
-
-        Debug.Log($"Left Sum: {leftSum} / Right Sum: {rightSum}");
-
-        if (leftSum == rightSum && (leftSum != 0 || rightSum != 0))
+        if (leftSum == rightSum)
         {
             GameManager.Instance.UI_Messages.text = $"✅ Correcto! {leftSum} = {rightSum}\nUsa ✋ Thumbs Up izquierdo para jugar de nuevo.";
             GameManager.Instance.LeftThumbsUp.gameObject.SetActive(true);
@@ -143,95 +132,22 @@ public class FlowManager : MonoBehaviour
         }
     }
 
-    public void UpdateSocketValue(int socketIndex)
+    public void LeftHandThumpsUpPerformed()
     {
-        var interactor = Sockets[socketIndex].GetComponent<XRSocketInteractor>();
-        if (interactor == null)
+        if (IsPracticeMode)
         {
-            SetSocketValue(socketIndex, 0);
-            return;
+            InitializeGame();
         }
-
-        var selected = interactor.GetOldestInteractableSelected();
-        if (selected == null)
+        else
         {
-            SetSocketValue(socketIndex, 0);
-            return;
+            RestartScene();
         }
-
-        string cubeName = selected.transform.name;
-        int value = GetCubeValueByName(cubeName);
-        SetSocketValue(socketIndex, value);
-    }
-
-    private void SetSocketValue(int index, int value)
-    {
-        switch (index)
-        {
-            case 0: SocketValue1 = value; break;
-            case 1: SocketValue2 = value; break;
-            case 2: SocketValue3 = value; break;
-            case 3: SocketValue4 = value; break;
-            case 4: SocketValue5 = value; break;
-            case 5: SocketValue6 = value; break;
-        }
-    }
-
-    public int GetCubeValueByName(string cubeName)
-    {
-        switch (cubeName)
-        {
-            case "CubeA": return _effectiveA;
-            case "CubeB": return _effectiveB;
-            case "CubeC": return _effectiveC;
-            case "CubeD": return _effectiveD;
-            case "CubeE": return _effectiveE;
-            case "CubeF": return _effectiveF;
-            default: return 0;
-        }
-    }
-
-    public void GenerateValuesABCDEF()
-    {
-        // 1. Generar valores aleatorios base
-        int[] validNumbers = { 1, 2, 3 };
-        A = validNumbers[Random.Range(0, validNumbers.Length)];
-        B = validNumbers[Random.Range(0, validNumbers.Length)];
-        C = validNumbers[Random.Range(0, validNumbers.Length)];
-        D = validNumbers[Random.Range(0, validNumbers.Length)];
-        E = validNumbers[Random.Range(0, validNumbers.Length)];
-        F = validNumbers[Random.Range(0, validNumbers.Length)];
-
-        // 2. Calcular valores efectivos (base + keypad)
-        _effectiveA = A + GetKeypadValue(keypadLock1.GetSavedCode());
-        _effectiveB = B + GetKeypadValue(keypadLock2.GetSavedCode());
-        _effectiveC = C + GetKeypadValue(keypadLock3.GetSavedCode());
-        _effectiveD = D + GetKeypadValue(keypadLock4.GetSavedCode());
-        _effectiveE = E + GetKeypadValue(keypadLock5.GetSavedCode());
-        _effectiveF = F + GetKeypadValue(keypadLock6.GetSavedCode());
-
-        // 3. Mostrar valores base en UI
-        Transform values = GameManager.Instance.MathematicsValues.transform;
-        values.GetChild(0).GetComponent<TextMeshPro>().text = A.ToString();
-        values.GetChild(2).GetComponent<TextMeshPro>().text = B.ToString();
-        values.GetChild(4).GetComponent<TextMeshPro>().text = C.ToString();
-        values.GetChild(6).GetComponent<TextMeshPro>().text = D.ToString();
-        values.GetChild(8).GetComponent<TextMeshPro>().text = E.ToString();
-        values.GetChild(10).GetComponent<TextMeshPro>().text = F.ToString();
-
-        Debug.Log($"Valores base: A={A}, B={B}, C={C} | D={D}, E={E}, F={F}");
-        Debug.Log($"Valores efectivos (base + keypad): A={_effectiveA}, B={_effectiveB}, C={_effectiveC} | D={_effectiveD}, E={_effectiveE}, F={_effectiveF}");
-    }
-
-    private int GetKeypadValue(string code)
-    {
-        if (code == "?") return 0;
-        return int.TryParse(code, out int result) ? result : 0;
     }
 
     public void RestartScene()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        Scene currentScene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(currentScene.name);
     }
 
     private void DisableSockets()
@@ -256,5 +172,42 @@ public class FlowManager : MonoBehaviour
                 socket.GetComponent<XRSocketInteractor>().enabled = true;
             }
         }
+    }
+
+    public void GenerateValuesABCDEF()
+    {
+        int[] validNumbers = { 1, 2, 3 };
+        A = validNumbers[Random.Range(0, validNumbers.Length)];
+        B = validNumbers[Random.Range(0, validNumbers.Length)];
+        C = validNumbers[Random.Range(0, validNumbers.Length)];
+        D = validNumbers[Random.Range(0, validNumbers.Length)];
+        E = validNumbers[Random.Range(0, validNumbers.Length)];
+        F = validNumbers[Random.Range(0, validNumbers.Length)];
+
+        Transform values = GameManager.Instance.MathematicsValues.transform;
+        try
+        {
+            values.GetChild(0).GetComponent<TextMeshPro>().text = A.ToString(); // A
+            values.GetChild(2).GetComponent<TextMeshPro>().text = B.ToString(); // B
+            values.GetChild(4).GetComponent<TextMeshPro>().text = C.ToString(); // C
+            values.GetChild(6).GetComponent<TextMeshPro>().text = D.ToString(); // D
+            values.GetChild(8).GetComponent<TextMeshPro>().text = E.ToString(); // E
+            values.GetChild(10).GetComponent<TextMeshPro>().text = F.ToString(); // F
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Error asignando valores: " + e.Message);
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Limpieza de eventos
+        KeypadLock.OnKeypadValueChanged -= UpdateKeypadValue;
+        KeypadLock2.OnKeypadValueChanged -= UpdateKeypadValue;
+        KeypadLock3.OnKeypadValueChanged -= UpdateKeypadValue;
+        KeypadLock4.OnKeypadValueChanged -= UpdateKeypadValue;
+        KeypadLock5.OnKeypadValueChanged -= UpdateKeypadValue;
+        KeypadLock6.OnKeypadValueChanged -= UpdateKeypadValue;
     }
 }
